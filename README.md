@@ -5,7 +5,7 @@
 ## 使用
 
 ```shell
-go get -u github.com/pheynix/imgmerge
+go get -u github.com/dujigui/imgmerge
 imgmerge -h
 ```
 
@@ -17,7 +17,7 @@ imgmerge -h
 
 ### 步骤
 ```shell
-git clone git@github.com:pheynix/imgmerge.git
+git clone git@github.com:dujigui/imgmerge.git
 cd imgmerge
 go mod tidy
 go build .
