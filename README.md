@@ -8,13 +8,23 @@
 go get -u github.com/dujigui/imgmerge
 imgmerge
 ```
-
-### 用例
+上述命令生成：
 ```shell
+Usage:
 1. imgmerge -od ~/Desktop/ -i ~/Desktop/imgs
 2. imgmerge -of ~/Desktop/imgmerge.png ~/Desktop/1.jpg ~/Desktop/2.jpg
 3. imgmerge -od ~/Desktop -m min -i ~/Desktop/imgs
 4. imgmerge -od ~/Desktop -i ~/Desktop/imgs -s 1.5
+  -i string
+    	input directory
+  -m string
+    	merge mode, max or min (default "max")
+  -od string
+    	output folder.
+  -of string
+    	output file.
+  -s float
+    	scale the output.
 ```
 
 ## 编译
