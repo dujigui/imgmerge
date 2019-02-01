@@ -6,7 +6,15 @@
 
 ```shell
 go get -u github.com/dujigui/imgmerge
-imgmerge -h
+imgmerge
+```
+
+### 用例
+```shell
+1. imgmerge -od ~/Desktop/ -i ~/Desktop/imgs
+2. imgmerge -of ~/Desktop/imgmerge.png ~/Desktop/1.jpg ~/Desktop/2.jpg
+3. imgmerge -od ~/Desktop -m min -i ~/Desktop/imgs
+4. imgmerge -od ~/Desktop -i ~/Desktop/imgs -s 1.5
 ```
 
 ## 编译
