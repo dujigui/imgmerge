@@ -1,6 +1,7 @@
 package main
 
 import (
+	"errors"
 	"flag"
 	"fmt"
 	"github.com/fogleman/gg"
@@ -11,16 +12,16 @@ import (
 )
 
 // 输入：
-// 1. -f 指定文件，出现顺序（默认）
-// 2. -i 指定目录
+// 1. -f 指定输入文件，按检索顺序（默认）
+// 2. -i 指定输入目录
 //
 // 处理：
-// 1. -m max=按宽度最大的缩放（默认）min=按宽度最小的缩放
-// 2. -s 结果缩放
+// 1. -m max=按宽度最大缩放（默认）min=按宽度最小缩放
+// 2. -s 压缩输入的图片, 0 < i < 100
 //
 // 输出
-// 1. -od 输出目录，默认文件名
-// 2. -of 输出文件
+// 1. -od 指定输出到目录，使用默认文件名 (imgmerge_<timestam>.png)
+// 2. -of 指定输出到文件。
 
 var (
 	input      = flag.String("i", "", "input directory")
@@ -48,7 +49,7 @@ func main() {
 	}
 
 	w, h, imgs := scaleImages(imgs, *mode)
-	fmt.Printf("output picture: %d*%d\n", w, h)
+	fmt.Printf("output picture: %d*%d\n", int(float64(w) * *scale), int(float64(h) * *scale))
 	dc := gg.NewContext(w, h)
 	var currentH int
 	for _, img := range imgs {
@@ -83,6 +84,10 @@ func load(inputDir string, inputFiles []string) []picture {
 }
 
 func loadImages(files []string) (result []picture) {
+	if len(files) == 0 {
+		panic(errors.New("empty input"))
+		return
+	}
 	for _, file := range files {
 		img, err := gg.LoadImage(file)
 		if err != nil {
