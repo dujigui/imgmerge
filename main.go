@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/fogleman/gg"
+	"github.com/gwpp/tinify-go/tinify"
 	"github.com/nfnt/resize"
 	"image"
 	"os"
@@ -17,26 +18,53 @@ import (
 //
 // 处理：
 // 1. -m max=按宽度最大缩放（默认）min=按宽度最小缩放
-// 2. -s 压缩输入的图片, 0 < i < 100
+// 2. -s 缩放图片, 0 < i < 100
+// 3. -c 压缩图片
+// 4. -k tinypng.com 提供的 API key
 //
 // 输出
 // 1. -od 指定输出到目录，使用默认文件名 (imgmerge_<timestam>.png)
 // 2. -of 指定输出到文件。
+//
+// 其他
+// 1. -v 版本信息
 
 var (
-	input      = flag.String("i", "", "input directory")
-	mode       = flag.String("m", "max", fmt.Sprintf("merge mode, %s or %s", Max, Min))
-	outputFile = flag.String("of", "", "output file.")
-	outputDir  = flag.String("od", "", "output folder.")
-	scale      = flag.Float64("s", 0.0, "scale the output.")
-	exts       = []string{".jpg", "jpeg", "png"}
+	input         = flag.String("i", "", "input directory")
+	mode          = flag.String("m", "max", fmt.Sprintf("merge mode, %s or %s", Max, Min))
+	outputFile    = flag.String("of", "", "output file.")
+	outputDir     = flag.String("od", "", "output folder.")
+	scale         = flag.Float64("s", 0.0, "scale the output.")
+	doCompress    = flag.Bool("c", false, "compress using tinypng.com")
+	tinypngAPIKey = flag.String("k", "", "api key from tinypng.com")
+	version       = flag.Bool("v", false, "print version info")
+	exts          = []string{".jpg", "jpeg", "png"}
 )
 
 func main() {
 	flag.Parse()
 	inputFiles := flag.Args()
 
+	if Debug {
+		fmt.Printf(
+			"input=%s\nmode=%s\noutputFile=%s\noutputDir=%s\nscale=%f\ndoCompress=%t\ntinypngAPIKey=%s\n",
+			*input, *mode, *outputFile, *outputDir, *scale, *doCompress, *tinypngAPIKey)
+	}
+
+	if *version {
+		fmt.Printf("Version: %s\nAuthor: github.com/dujigui/imgmerge\n", Version)
+		return
+	}
+
 	if *input == "" && len(inputFiles) == 0 {
+		fmt.Println("Please supply input")
+		fmt.Println(Usage)
+		flag.PrintDefaults()
+		return
+	}
+
+	if *doCompress && *tinypngAPIKey == "" {
+		fmt.Println("Please apply for api key from tinypng.com")
 		fmt.Println(Usage)
 		flag.PrintDefaults()
 		return
@@ -49,7 +77,13 @@ func main() {
 	}
 
 	w, h, imgs := scaleImages(imgs, *mode)
-	fmt.Printf("output picture: %d*%d\n", int(float64(w) * *scale), int(float64(h) * *scale))
+	pw := w
+	ph := h
+	if *scale != 0 {
+		pw = int(float64(w) * *scale)
+		ph = int(float64(h) * *scale)
+	}
+	fmt.Printf("output picture: %d*%d\n", pw, ph)
 	dc := gg.NewContext(w, h)
 	var currentH int
 	for _, img := range imgs {
@@ -57,8 +91,15 @@ func main() {
 		currentH += img.Bounds().Dy()
 	}
 
-	if err := save(dc, getOutput(*outputFile, *outputDir)); err != nil {
+	o := getOutput(*outputFile, *outputDir)
+	if err := save(dc, o); err != nil {
 		panic(err)
+	}
+
+	if *doCompress {
+		if err := compress(o, o); err != nil {
+			panic(err)
+		}
 	}
 }
 
@@ -137,17 +178,50 @@ func save(c *gg.Context, output string) error {
 	return err
 }
 
+func compress(input, output string) error {
+	fs := fileSize(input)
+	fmt.Printf("before compress: %d bytes\n", fs)
+
+	Tinify.SetKey(*tinypngAPIKey)
+	source, err := Tinify.FromFile(input)
+	if err != nil {
+		return errors.New("compress fail")
+	}
+
+	fmt.Println("compressing...")
+	err = source.ToFile(output)
+	if err != nil {
+		return errors.New("output fail")
+	}
+
+	fs = fileSize(input)
+	fmt.Printf("after compress: %d bytes\n", fs)
+
+	return nil
+}
+
+func fileSize(input string) int64 {
+	fi, err := os.Stat(input)
+	if err != nil {
+		panic(err)
+	}
+	return fi.Size()
+}
+
 type picture struct {
 	image.Image
 	path string
 }
 
 const (
-	Max   = "max"
-	Min   = "min"
-	Usage = `Usage:
+	Debug   = false
+	Version = "1.0.1"
+	Max     = "max"
+	Min     = "min"
+	Usage   = `Usage:
 1. imgmerge -od ~/Desktop/ -i ~/Desktop/imgs
 2. imgmerge -of ~/Desktop/imgmerge.png ~/Desktop/1.jpg ~/Desktop/2.jpg
 3. imgmerge -od ~/Desktop -m min -i ~/Desktop/imgs
-4. imgmerge -od ~/Desktop -i ~/Desktop/imgs -s 1.5`
+4. imgmerge -od ~/Desktop -i ~/Desktop/imgs -s 1.5
+5. imgmerge -od ~/Desktop/ -i ~/Desktop/imgs -c -k yourAPIkey`
 )
