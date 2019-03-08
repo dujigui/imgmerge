@@ -185,13 +185,13 @@ func compress(input, output string) error {
 	Tinify.SetKey(*tinypngAPIKey)
 	source, err := Tinify.FromFile(input)
 	if err != nil {
-		return errors.New("compress fail")
+		return errors.New("compress fail " + err.Error())
 	}
 
 	fmt.Println("compressing...")
 	err = source.ToFile(output)
 	if err != nil {
-		return errors.New("output fail")
+		return errors.New("output fail" + err.Error())
 	}
 
 	fs = fileSize(input)
@@ -215,7 +215,7 @@ type picture struct {
 
 const (
 	Debug   = false
-	Version = "1.0.1"
+	Version = "1.0.2"
 	Max     = "max"
 	Min     = "min"
 	Usage   = `Usage:
